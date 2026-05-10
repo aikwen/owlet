@@ -1,0 +1,39 @@
+[[snippets]]
+command = "git status"
+desc = "查看当前工作区状态。"
+
+[[snippets]]
+command = "git add ."
+desc = "添加当前目录下的全部修改。"
+
+[[snippets]]
+command = "git commit -m \":recycle: refactor xxx\""
+desc = "提交重构类变更。"
+
+[[snippets]]
+command = "git commit -m \":sparkles: add xxx\""
+desc = "提交新功能类变更。"
+
+[[snippets]]
+command = "git commit -m \":bug: fix xxx\""
+desc = "提交 bug 修复类变更。"
+
+[[snippets]]
+command = "git push origin main"
+desc = "推送 main 分支到 origin。"
+
+[[snippets]]
+command = "git pull --rebase origin main"
+desc = "从 origin/main 拉取并 rebase 当前分支。"
+
+[[snippets]]
+command = "git log --oneline --graph --decorate --all"
+desc = "以简洁图形方式查看 Git 提交历史。"
+
+[[snippets]]
+command = "git diff"
+desc = "查看工作区未暂存的修改。"
+
+[[snippets]]
+command = "git diff --cached"
+desc = "查看已经暂存但还没有提交的修改。"

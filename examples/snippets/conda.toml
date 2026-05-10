@@ -1,0 +1,31 @@
+[[snippets]]
+command = "conda env list"
+desc = "查看所有 conda 环境。"
+
+[[snippets]]
+command = "conda info --envs"
+desc = "查看所有 conda 环境，效果和 conda env list 类似。"
+
+[[snippets]]
+command = "conda create -n myenv python=3.11"
+desc = "创建名为 myenv 的 Python 3.11 环境。"
+
+[[snippets]]
+command = "conda activate myenv"
+desc = "激活指定 conda 环境。"
+
+[[snippets]]
+command = "conda deactivate"
+desc = "退出当前 conda 环境。"
+
+[[snippets]]
+command = "conda remove -n myenv --all"
+desc = "删除名为 myenv 的 conda 环境。"
+
+[[snippets]]
+command = "conda install numpy pillow"
+desc = "在当前环境安装 numpy 和 pillow。"
+
+[[snippets]]
+command = "conda list"
+desc = "查看当前环境已经安装的包。"
