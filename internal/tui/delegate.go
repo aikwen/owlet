@@ -12,12 +12,14 @@ import (
 
 const (
 	itemPrefix         = "  "
-	selectedItemPrefix = "> "
+	selectedItemPrefix = "› "
 )
 
 var (
 	itemStyle         = lipgloss.NewStyle()
-	selectedItemStyle = lipgloss.NewStyle().Bold(true)
+	selectedItemStyle   = lipgloss.NewStyle()
+	selectedPrefixStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("33"))
 )
 
 // delegate 渲染 snippet 列表项。
@@ -57,17 +59,19 @@ func (d delegate) Render(w io.Writer, m list.Model, index int, listItem list.Ite
 
 func (d delegate) renderCommand(it item, selected bool, width int) string {
 	prefix := itemPrefix
-	style := itemStyle
-
-	if selected {
-		prefix = selectedItemPrefix
-		style = selectedItemStyle
-	}
 
 	contentWidth := max(width-lipgloss.Width(prefix), 0)
 	command := truncateHighlighted(it.snippet.Command, it.query, contentWidth)
 
-	return style.Render(prefix) + command
+	if selected {
+		prefix = selectedItemPrefix
+		contentWidth = max(width-lipgloss.Width(prefix), 0)
+		command = truncateHighlighted(it.snippet.Command, it.query, contentWidth)
+
+		return selectedPrefixStyle.Render(prefix) + command
+	}
+
+	return itemStyle.Render(prefix) + command
 }
 
 // truncate 按终端显示宽度截断文本。
