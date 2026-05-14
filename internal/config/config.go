@@ -15,7 +15,6 @@ const (
 	DefaultShortcut       = ""
 )
 
-
 type Config struct {
 	AppDir     string
 	ConfigFile string

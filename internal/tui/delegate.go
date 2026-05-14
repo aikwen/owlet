@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	itemStyle         = lipgloss.NewStyle()
+	itemStyle           = lipgloss.NewStyle()
 	selectedItemStyle   = lipgloss.NewStyle()
 	selectedPrefixStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("33"))
