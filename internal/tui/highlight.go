@@ -7,7 +7,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var highlightStyle = lipgloss.NewStyle().Bold(true).Underline(true)
+var highlightStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("36"))
 
 // highlight 渲染命中的搜索关键词。
 func highlight(text string, query string) string {
