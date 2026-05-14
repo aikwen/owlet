@@ -16,7 +16,8 @@ const (
 )
 
 var (
-	searchLabelStyle = lipgloss.NewStyle().Bold(true)
+	promptStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("33"))
 	helpStyle        = lipgloss.NewStyle().Faint(true)
 	detailLabelStyle = lipgloss.NewStyle().Bold(true)
 	detailTextStyle  = lipgloss.NewStyle().PaddingLeft(2)
@@ -37,19 +38,23 @@ type Model struct {
 
 // New 创建 TUI model。
 func New(snippets []snippet.Snippet) Model {
+	// input 组件
 	input := textinput.New()
 	input.Placeholder = "Search snippets..."
 	input.Focus()
 	input.CharLimit = 256
 	input.Width = defaultWidth
+	input.Prompt = "> "
+	input.PromptStyle = promptStyle
 
 	items := toItems(snippets, "")
 
+	// list 组件
 	l := list.New(items, newDelegate(), defaultWidth, defaultListHeight)
 	l.SetShowTitle(false)
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
-	l.SetShowPagination(false)
+	l.SetShowPagination(true)
 	l.SetFilteringEnabled(false)
 
 	m := Model{
@@ -87,11 +92,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if selected, ok := m.selectedItem(); ok {
 				m.selected = selected.snippet.Command
 				m.ok = true
+				return m, tea.Quit
 			}
 
-			return m, tea.Quit
+			return m, nil
 
 		case "tab":
+			if _, ok := m.selectedItem(); !ok {
+				return m, nil
+			}
+
 			m.expanded = !m.expanded
 			m.resizeList()
 			return m, nil
@@ -125,8 +135,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	var b strings.Builder
 
-	b.WriteString(searchLabelStyle.Render("Search:"))
-	b.WriteString(" ")
 	b.WriteString(m.input.View())
 	b.WriteString("\n\n")
 	b.WriteString(m.list.View())
@@ -178,11 +186,13 @@ func (m *Model) resizeList() {
 // listHeight 返回列表显示高度。
 func (m Model) listHeight() int {
 	count := len(m.list.Items())
-	if count <= 0 {
-		return 1
+
+	contentHeight := min(count, defaultListHeight)
+	if contentHeight <= 0 {
+		contentHeight = 1
 	}
 
-	return min(count, defaultListHeight)
+	return contentHeight + 1
 }
 
 // renderDetail 渲染当前选中项详情。
