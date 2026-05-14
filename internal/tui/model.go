@@ -12,12 +12,13 @@ import (
 
 const (
 	defaultWidth      = 80
+	defaultHeight     = 24
 	defaultListHeight = 10
 )
 
 var (
 	promptStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("33"))
+			Foreground(lipgloss.Color("33"))
 	helpStyle        = lipgloss.NewStyle().Faint(true)
 	detailLabelStyle = lipgloss.NewStyle().Bold(true)
 	detailTextStyle  = lipgloss.NewStyle().PaddingLeft(2)
@@ -34,11 +35,11 @@ type Model struct {
 	selected string
 	ok       bool
 	width    int
+	height   int
 }
 
 // New 创建 TUI model。
 func New(snippets []snippet.Snippet) Model {
-	// input 组件
 	input := textinput.New()
 	input.Placeholder = "Search snippets..."
 	input.Focus()
@@ -49,7 +50,6 @@ func New(snippets []snippet.Snippet) Model {
 
 	items := toItems(snippets, "")
 
-	// list 组件
 	l := list.New(items, newDelegate(), defaultWidth, defaultListHeight)
 	l.SetShowTitle(false)
 	l.SetShowStatusBar(false)
@@ -62,6 +62,7 @@ func New(snippets []snippet.Snippet) Model {
 		list:     l,
 		snippets: snippets,
 		width:    defaultWidth,
+		height:   defaultHeight,
 	}
 	m.resizeList()
 
@@ -80,6 +81,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
+		m.height = msg.Height
 		m.input.Width = msg.Width
 		m.resizeList()
 
@@ -136,16 +138,31 @@ func (m Model) View() string {
 	var b strings.Builder
 
 	b.WriteString(m.input.View())
-	b.WriteString("\n\n")
-	b.WriteString(m.list.View())
 
-	if m.expanded {
+	listHeight := m.listHeight()
+	detailHeight := m.rawDetailHeight()
+	detailVisible := m.showDetail(listHeight, detailHeight)
+	helpVisible := m.showHelp(listHeight, detailVisible, detailHeight)
+
+	if listHeight > 0 {
+		if m.showListGap() {
+			b.WriteString("\n\n")
+		} else {
+			b.WriteString("\n")
+		}
+
+		b.WriteString(m.list.View())
+	}
+
+	if detailVisible {
 		b.WriteString("\n\n")
 		b.WriteString(m.renderDetail())
 	}
 
-	b.WriteString("\n")
-	b.WriteString(helpStyle.Render("↑/↓ move · tab detail · enter select · esc quit"))
+	if helpVisible {
+		b.WriteString("\n")
+		b.WriteString(helpStyle.Render("↑/↓ move · tab detail · enter select · esc quit"))
+	}
 
 	return b.String()
 }
@@ -185,14 +202,112 @@ func (m *Model) resizeList() {
 
 // listHeight 返回列表显示高度。
 func (m Model) listHeight() int {
+	if m.height <= 0 {
+		return m.defaultTotalListHeight()
+	}
+
+	availableHeight := m.height - 1
+	if availableHeight <= 0 {
+		return 0
+	}
+
+	availableHeight -= m.listGapLines() - 1
+	if availableHeight <= 0 {
+		return 0
+	}
+
+	return min(m.defaultTotalListHeight(), availableHeight)
+}
+
+// defaultTotalListHeight 返回默认列表总高度，包括分页区域。
+func (m Model) defaultTotalListHeight() int {
+	return m.defaultContentListHeight() + 1
+}
+
+// defaultContentListHeight 返回默认列表内容高度。
+func (m Model) defaultContentListHeight() int {
 	count := len(m.list.Items())
 
 	contentHeight := min(count, defaultListHeight)
 	if contentHeight <= 0 {
-		contentHeight = 1
+		return 1
 	}
 
-	return contentHeight + 1
+	return contentHeight
+}
+
+// showListGap 返回是否在输入框和列表之间保留空行。
+func (m Model) showListGap() bool {
+	return m.height <= 0 || m.height >= 4
+}
+
+// listGapLines 返回输入框和列表之间的换行数。
+func (m Model) listGapLines() int {
+	if m.showListGap() {
+		return 2
+	}
+
+	return 1
+}
+
+// appendedHeight 返回追加内容占用的显示高度。
+func appendedHeight(newlines int, contentHeight int) int {
+	if contentHeight <= 0 {
+		return 0
+	}
+
+	return newlines + contentHeight - 1
+}
+
+// baseViewHeight 返回输入框和列表占用的显示高度。
+func (m Model) baseViewHeight(listHeight int) int {
+	height := 1
+	if listHeight > 0 {
+		height += appendedHeight(m.listGapLines(), listHeight)
+	}
+
+	return height
+}
+
+// showDetail 返回是否渲染详情区域。
+func (m Model) showDetail(listHeight int, detailHeight int) bool {
+	if !m.expanded {
+		return false
+	}
+
+	if detailHeight <= 0 {
+		return false
+	}
+
+	if m.height <= 0 {
+		return true
+	}
+
+	return m.baseViewHeight(listHeight)+appendedHeight(2, detailHeight) <= m.height
+}
+
+// showHelp 返回是否渲染快捷键提示。
+func (m Model) showHelp(listHeight int, detailVisible bool, detailHeight int) bool {
+	if m.height <= 0 {
+		return true
+	}
+
+	usedHeight := m.baseViewHeight(listHeight)
+	if detailVisible {
+		usedHeight += appendedHeight(2, detailHeight)
+	}
+
+	return usedHeight+appendedHeight(1, 1) <= m.height
+}
+
+// rawDetailHeight 返回详情区域原始显示高度。
+func (m Model) rawDetailHeight() int {
+	detail := m.renderDetail()
+	if strings.TrimSpace(detail) == "" {
+		return 0
+	}
+
+	return lipgloss.Height(detail)
 }
 
 // renderDetail 渲染当前选中项详情。
